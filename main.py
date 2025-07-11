@@ -3,6 +3,7 @@ import base64
 import cv2
 from dotenv import load_dotenv
 import os
+import argparse
 
 # APIキーの取得
 api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -63,8 +64,27 @@ def get_text_from_video(file_path, prompt, model, max_images=20):
             print(text, end="", flush=True)
 
 if __name__ == "__main__":
-    video_file_path = os.path.join("resources", "video_name.mp4")  # ビデオファイルのパスを指定
-    prompt = "これは動画のフレーム画像です。動画の最初から最後の流れ、動作を微分して日本語で解説してください。"  # プロンプトを指定
-    model = "claude-3-sonnet-20240229"  # モデルを指定 "claude-3-opus-20240229" or "claude-3-sonnet-20240229"
-
-    get_text_from_video(video_file_path, prompt, model)
+    # CLI引数のパーサーを設定
+    parser = argparse.ArgumentParser(description="Claude-3を使用して動画を解析します")
+    parser.add_argument("video_path", help="解析する動画ファイルのパス")
+    parser.add_argument("-p", "--prompt", 
+                       default="これは動画のフレーム画像です。動画の最初から最後の流れ、動作を微分して日本語で解説してください。",
+                       help="動画解析用のプロンプト (デフォルト: 動画の流れを日本語で解説)")
+    parser.add_argument("-m", "--model", 
+                       default="claude-3-5-sonnet-20241022",
+                       choices=["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"],
+                       help="使用するClaudeモデル (デフォルト: claude-3-5-sonnet-20241022)")
+    parser.add_argument("--max-images", 
+                       type=int, 
+                       default=20,
+                       help="解析に使用する最大フレーム数 (デフォルト: 20)")
+    
+    args = parser.parse_args()
+    
+    # ファイルの存在確認
+    if not os.path.exists(args.video_path):
+        print(f"エラー: 動画ファイルが見つかりません: {args.video_path}")
+        exit(1)
+    
+    # 動画を解析
+    get_text_from_video(args.video_path, args.prompt, args.model, args.max_images)
